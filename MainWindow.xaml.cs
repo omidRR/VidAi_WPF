@@ -1,13 +1,8 @@
-﻿using System;
-using System.Windows;
+﻿using Microsoft.Win32;
 using OpenCvSharp;
-using System.Linq;
-using System.IO;
-using Microsoft.Win32;
-using System.Drawing;
 using OpenCvSharp.Dnn;
-using System.Threading;
-using System.Threading.Tasks;
+using System.IO;
+using System.Windows;
 
 namespace VidAi_WPF
 {
@@ -17,7 +12,7 @@ namespace VidAi_WPF
         private VideoCapture capture;
         private CancellationTokenSource cancellationTokenSource;
         private Task videoProcessingTask;
-        private bool isVideoPlaying = false;  
+        private bool isVideoPlaying = false;
 
         public MainWindow()
         {
@@ -54,6 +49,10 @@ namespace VidAi_WPF
 
                     Net net = CvDnn.ReadNetFromDarknet(modelConfig, modelWeights);
 
+                    net.SetPreferableBackend(Backend.OPENCV);
+                    net.SetPreferableTarget(Target.OPENCL);
+
+
                     capture = new VideoCapture(videoPath);
 
                     if (!capture.IsOpened())
@@ -63,9 +62,9 @@ namespace VidAi_WPF
                     }
 
                     Mat frame = new Mat();
-                    int frameSkip = 2; // prossess in frame
+                    int frameSkip = 3; // prossess in 1 frame
                     int frameCounter = 0;
-                    isVideoPlaying = true; 
+                    isVideoPlaying = true;
 
                     while (!cancellationToken.IsCancellationRequested && isVideoPlaying)
                     {
@@ -73,7 +72,7 @@ namespace VidAi_WPF
                         {
                             Dispatcher.Invoke(() =>
                             {
-                                MessageBox.Show("Video ai detection operation completed. Please select a new video.");
+                                MessageBox.Show("Video AI detection operation completed. Please select a new video.");
                             });
                             break;
                         }
@@ -86,9 +85,9 @@ namespace VidAi_WPF
                             continue;
 
                         Mat resizedFrame = new Mat();
-                        Cv2.Resize(frame, resizedFrame, new OpenCvSharp.Size(640, 360));
+                        Cv2.Resize(frame, resizedFrame, new OpenCvSharp.Size(1080, 720));
 
-                        Mat blob = CvDnn.BlobFromImage(resizedFrame, 1 / 255.0, new OpenCvSharp.Size(416, 416), new Scalar(0, 0, 0), true, false);
+                        Mat blob = CvDnn.BlobFromImage(resizedFrame, 1 / 255.0, new OpenCvSharp.Size(600, 600), new Scalar(0, 0, 0), true, false);
                         net.SetInput(blob);
 
                         var outputLayerNames = net.GetUnconnectedOutLayersNames();
@@ -116,10 +115,10 @@ namespace VidAi_WPF
                                         int x = (int)(centerX - width / 2);
                                         int y = (int)(centerY - height / 2);
 
-                                        // رسم مستطیل
-                                        Cv2.Rectangle(resizedFrame, new OpenCvSharp.Rect(x, y, (int)width, (int)height), Scalar.Red, 2);
+
+                                        Cv2.Rectangle(resizedFrame, new OpenCvSharp.Rect(x, y, (int)width, (int)height), Scalar.DarkBlue, 2);
                                         string text = $"{label} {confidence * 100:0}%";
-                                        Cv2.PutText(resizedFrame, text, new OpenCvSharp.Point(x, y - 10), HersheyFonts.HersheySimplex, 0.2, Scalar.Green, 1);
+                                        Cv2.PutText(resizedFrame, text, new OpenCvSharp.Point(x, y - 10), HersheyFonts.HersheySimplex, 0.5, Scalar.Green, 1);
                                     }
                                 }
                             }
@@ -131,8 +130,7 @@ namespace VidAi_WPF
                             VideoImage.Source = BitmapToImageSource(bitmap);
                         });
 
-                        if (Cv2.WaitKey(30) == 'q')
-                            break;
+                        Thread.Sleep(15);
                     }
 
                     capture.Release();
@@ -155,10 +153,9 @@ namespace VidAi_WPF
             {
                 cancellationTokenSource?.Cancel();
                 videoProcessingTask.Wait();
-                capture?.Release();  
+                capture?.Release();
             }
         }
-
 
         private System.Drawing.Bitmap MatToBitmap(Mat mat)
         {
@@ -171,6 +168,7 @@ namespace VidAi_WPF
                 return new System.Drawing.Bitmap(ms);
             }
         }
+
         private System.Windows.Media.ImageSource BitmapToImageSource(System.Drawing.Bitmap bitmap)
         {
             var hbitmap = bitmap.GetHbitmap();

@@ -9,11 +9,40 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Data\coco.names" />
+    <None Remove="Data\Street Camera View People Walking Pedestrian Stock Footage Video %28100%25 Royalty-free%29 1030931519.mp4" />
+    <None Remove="Data\Street Camera View People Walking Pedestrian Stock Footage Video %28100%25 Royalty-free%29 1030931519.webm" />
+    <None Remove="Data\yolov3-tiny.cfg" />
+    <None Remove="Data\yolov3-tiny.weights" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\coco.names">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\Street Camera View People Walking Pedestrian Stock Footage Video (100% Royalty-free) 1030931519.mp4">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\yolov3-tiny.cfg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\yolov3-tiny.weights">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MaterialDesignColors" Version="5.2.1-ci867" />
     <PackageReference Include="MaterialDesignThemes" Version="5.2.1-ci867" />
     <PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20241108" />
     <PackageReference Include="OpenCvSharp4.WpfExtensions" Version="4.10.0.20241108" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Data\video.mp4">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

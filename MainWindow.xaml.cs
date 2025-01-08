@@ -41,9 +41,14 @@ namespace VidAi_WPF
             {
                 try
                 {
-                    string modelWeights = "yolov3-tiny.weights";
-                    string modelConfig = "yolov3-tiny.cfg";
-                    string classNamesFile = "coco.names";
+
+                    string basePath = AppDomain.CurrentDomain.BaseDirectory;
+
+                    string dataFolder = Path.Combine(basePath, "Data");
+
+                    string modelWeights = Path.Combine(dataFolder, "yolov3-tiny.weights");
+                    string modelConfig = Path.Combine(dataFolder, "yolov3-tiny.cfg");
+                    string classNamesFile = Path.Combine(dataFolder, "coco.names");
 
                     var classes = File.ReadAllLines(classNamesFile).ToList();
 
@@ -85,9 +90,9 @@ namespace VidAi_WPF
                             continue;
 
                         Mat resizedFrame = new Mat();
-                        Cv2.Resize(frame, resizedFrame, new OpenCvSharp.Size(1080, 720));
+                        Cv2.Resize(frame, resizedFrame, new OpenCvSharp.Size(900, 620));
 
-                        Mat blob = CvDnn.BlobFromImage(resizedFrame, 1 / 255.0, new OpenCvSharp.Size(600, 600), new Scalar(0, 0, 0), true, false);
+                        Mat blob = CvDnn.BlobFromImage(resizedFrame, 1 / 255.0, new OpenCvSharp.Size(416, 416), new Scalar(0, 0, 0), true, false);
                         net.SetInput(blob);
 
                         var outputLayerNames = net.GetUnconnectedOutLayersNames();

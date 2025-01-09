@@ -7,15 +7,14 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="VidAi"
-        Height="600"
-        Width="800"
+        Height="720"
+        Width="1080"
         Background="DarkGray"
         AllowDrop="True"
         Drop="Window_Drop"
         DragOver="Window_DragOver">
 
     <Window.Resources>
-       
         <Style TargetType="Border" x:Key="DragAreaStyle">
             <Setter Property="Background" Value="LightGray"/>
             <Setter Property="CornerRadius" Value="20"/>
@@ -32,7 +31,47 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Button Content="Select Video" Grid.Row="0" Click="SelectFile_Click"/>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,10,0,10">
+            <Button Click="SelectFile_Click" Margin="10,0" Width="150"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
+                    FontSize="14">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Film" Width="20" Height="20" Margin="0,0,5,0"/>
+                        <TextBlock Text="Select Video" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+
+            <Button x:Name="ReplayButton" Click="ReplayButton_Click" Margin="10,0" Width="150"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
+                    FontSize="14" Background="#FF673AB7">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Replay" Width="20" Height="20" Margin="0,0,5,0"/>
+                        <TextBlock Text="Replay" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+
+            <CheckBox x:Name="HumanDetectionCheckBox" Margin="10,0" IsChecked="False"
+                      Style="{StaticResource MaterialDesignCheckBox}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Human" Width="20" Height="20" Margin="0,0,5,0"/>
+                    <TextBlock Text="Detect Humans Only" VerticalAlignment="Center"/>
+                </StackPanel>
+            </CheckBox>
+
+            <CheckBox x:Name="AllObjectsDetectionCheckBox" Margin="10,0" IsChecked="True"
+                      Style="{StaticResource MaterialDesignCheckBox}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="ShapeOutline" Width="20" Height="20" Margin="0,0,5,0"/>
+                    <TextBlock Text="Detect All Objects (Exclude Humans)" VerticalAlignment="Center"/>
+                </StackPanel>
+            </CheckBox>
+        </StackPanel>
 
         <Border Grid.Row="2" Style="{StaticResource DragAreaStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" FontWeight="Bold">
@@ -40,6 +79,7 @@
             </TextBlock>
         </Border>
 
-        <Image Name="VideoImage" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10"/>
+        <Image Name="VideoImage" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+               Stretch="Fill" StretchDirection="Both" Margin="10"/>
     </Grid>
 </Window>

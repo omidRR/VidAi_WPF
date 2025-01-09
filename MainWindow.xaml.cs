@@ -3,6 +3,8 @@ using OpenCvSharp;
 using OpenCvSharp.Dnn;
 using System.IO;
 using System.Windows;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace VidAi_WPF
 {
@@ -30,9 +32,22 @@ namespace VidAi_WPF
             }
         }
 
+        private void ReplayButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(videoPath))
+            {
+                StopVideoProcessingCompletely(); 
+                StartObjectDetection(videoPath); 
+            }
+            else
+            {
+                MessageBox.Show("No video selected. Please select a video first.");
+            }
+        }
+
         private void StartObjectDetection(string videoPath)
         {
-            StopCurrentVideoProcessing();
+            StopVideoProcessingCompletely(); 
 
             cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
@@ -41,9 +56,7 @@ namespace VidAi_WPF
             {
                 try
                 {
-
                     string basePath = AppDomain.CurrentDomain.BaseDirectory;
-
                     string dataFolder = Path.Combine(basePath, "Data");
 
                     string modelWeights = Path.Combine(dataFolder, "yolov3-tiny.weights");
@@ -53,37 +66,29 @@ namespace VidAi_WPF
                     var classes = File.ReadAllLines(classNamesFile).ToList();
 
                     Net net = CvDnn.ReadNetFromDarknet(modelConfig, modelWeights);
-
                     net.SetPreferableBackend(Backend.OPENCV);
                     net.SetPreferableTarget(Target.OPENCL);
 
-
-                    capture = new VideoCapture(videoPath);
+                    capture = new VideoCapture(videoPath); 
 
                     if (!capture.IsOpened())
                     {
-                        MessageBox.Show("Error to open video");
+                        Dispatcher.Invoke(() => MessageBox.Show("Error to open video"));
                         return;
                     }
 
                     Mat frame = new Mat();
-                    int frameSkip = 3; // prossess in 1 frame
+                    int frameSkip = 3; // process in 1 frame
                     int frameCounter = 0;
                     isVideoPlaying = true;
 
                     while (!cancellationToken.IsCancellationRequested && isVideoPlaying)
                     {
-                        if (!capture.Read(frame))
+                        if (!capture.Read(frame) || frame.Empty())
                         {
-                            Dispatcher.Invoke(() =>
-                            {
-                                MessageBox.Show("Video AI detection operation completed. Please select a new video.");
-                            });
+                            Dispatcher.Invoke(() => MessageBox.Show("Video AI detection operation completed. Please select a new video."));
                             break;
                         }
-
-                        if (frame.Empty())
-                            break;
 
                         frameCounter++;
                         if (frameCounter % frameSkip != 0)
@@ -111,19 +116,17 @@ namespace VidAi_WPF
                                 if (confidence > 0.2)
                                 {
                                     string label = classes[classId];
-                                    if (label == "person" || label == "cat" || label == "dog" || label == "horse" || label == "bird")
+
+                                    bool detectHumansOnly = Dispatcher.Invoke(() => HumanDetectionCheckBox.IsChecked == true);
+                                    bool detectAllObjects = Dispatcher.Invoke(() => AllObjectsDetectionCheckBox.IsChecked == true);
+
+                                    if (detectAllObjects && label != "person")
                                     {
-                                        float centerX = output.At<float>(i, 0) * resizedFrame.Width;
-                                        float centerY = output.At<float>(i, 1) * resizedFrame.Height;
-                                        float width = output.At<float>(i, 2) * resizedFrame.Width;
-                                        float height = output.At<float>(i, 3) * resizedFrame.Height;
-                                        int x = (int)(centerX - width / 2);
-                                        int y = (int)(centerY - height / 2);
-
-
-                                        Cv2.Rectangle(resizedFrame, new OpenCvSharp.Rect(x, y, (int)width, (int)height), Scalar.DarkBlue, 2);
-                                        string text = $"{label} {confidence * 100:0}%";
-                                        Cv2.PutText(resizedFrame, text, new OpenCvSharp.Point(x, y - 10), HersheyFonts.HersheySimplex, 0.5, Scalar.Green, 1);
+                                        DrawDetection(resizedFrame, output, i, label, confidence);
+                                    }
+                                    else if (detectHumansOnly && label == "person")
+                                    {
+                                        DrawDetection(resizedFrame, output, i, label, confidence);
                                     }
                                 }
                             }
@@ -140,28 +143,51 @@ namespace VidAi_WPF
 
                     capture.Release();
                     isVideoPlaying = false;
-
                 }
                 catch (Exception ex)
                 {
-                    Dispatcher.Invoke(() =>
-                    {
-                        MessageBox.Show($"خطا: {ex.Message}");
-                    });
+                    Dispatcher.Invoke(() => MessageBox.Show($"خطا: {ex.Message}"));
                 }
             }, cancellationToken);
         }
 
-        private void StopCurrentVideoProcessing()
+     
+        private void StopVideoProcessingCompletely()
         {
             if (videoProcessingTask != null && !videoProcessingTask.IsCompleted)
             {
-                cancellationTokenSource?.Cancel();
-                videoProcessingTask.Wait();
-                capture?.Release();
+                cancellationTokenSource?.Cancel(); 
+                try
+                {
+                    videoProcessingTask.Wait(TimeSpan.FromSeconds(2)); 
+                }
+                catch (AggregateException)
+                {
+                   
+                }
+                finally
+                {
+                    capture?.Release(); 
+                    isVideoPlaying = false; 
+                    cancellationTokenSource?.Dispose(); 
+                    cancellationTokenSource = null; 
+                }
             }
         }
 
+        private void DrawDetection(Mat frame, Mat output, int index, string label, double confidence)
+        {
+            float centerX = output.At<float>(index, 0) * frame.Width;
+            float centerY = output.At<float>(index, 1) * frame.Height;
+            float width = output.At<float>(index, 2) * frame.Width;
+            float height = output.At<float>(index, 3) * frame.Height;
+            int x = (int)(centerX - width / 2);
+            int y = (int)(centerY - height / 2);
+
+            Cv2.Rectangle(frame, new OpenCvSharp.Rect(x, y, (int)width, (int)height), Scalar.DarkBlue, 2);
+            string text = $"{label} {confidence * 100:0}%";
+            Cv2.PutText(frame, text, new OpenCvSharp.Point(x, y - 10), HersheyFonts.HersheySimplex, 0.5, Scalar.Green, 1);
+        }
         private System.Drawing.Bitmap MatToBitmap(Mat mat)
         {
             if (mat.Empty())
